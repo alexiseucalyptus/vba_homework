@@ -1,0 +1,145 @@
+Sub AlphabeticalTestingLoop()
+
+    ' Create a script that loops through all the stocks for one year and outputs the following:
+    ' Ticker, Yearly Change, Percent Change, Total Stock Volume
+    
+    Dim ws As Worksheet
+    For Each ws In ThisWorkbook.Worksheets
+        
+        ' Initialize variables
+        Dim tickerSymbol As String
+        Dim totalStockVolume As Double
+        Dim yearlyChange As Double
+        Dim percentChange As Double
+        Dim openPrice As Double
+        Dim closePrice As Double
+        Dim LastRow As Long
+        Dim i As Long
+        Dim SummaryTableRow As Integer
+        
+        totalStockVolume = 0
+        yearlyChange = 0
+        percentChange = 0
+        SummaryTableRow = 2
+        
+        ' Loop through all stocks
+        LastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+        For i = 2 To LastRow
+            
+            ' Check if we are still in the same stock range
+            If ws.Cells(i + 1, 1).Value <> ws.Cells(i, 1).Value Then
+                
+                ' Set ticker symbol
+                tickerSymbol = ws.Cells(i, 1).Value
+                
+                ' Compute the total stock volume
+                totalStockVolume = totalStockVolume + ws.Cells(i, 7).Value
+                
+                ' Compute the yearly change
+                closePrice = ws.Cells(i, 6).Value
+                yearlyChange = closePrice - openPrice
+                
+                ' Compute the percent change
+                If openPrice <> 0 Then
+                    percentChange = (closePrice - openPrice) / openPrice
+                Else
+                    percentChange = 0
+                End If
+                
+                ' Output the results in the summary table
+                ws.Range("I" & SummaryTableRow).Value = tickerSymbol
+                ws.Range("L" & SummaryTableRow).Value = totalStockVolume
+                ws.Range("J" & SummaryTableRow).Value = yearlyChange
+                ws.Range("K" & SummaryTableRow).Value = percentChange
+                ws.Range("K" & SummaryTableRow).NumberFormat = "0.00%"
+                
+                ' Increment the summary table row
+                SummaryTableRow = SummaryTableRow + 1
+                
+                ' Reset the total stock volume
+                totalStockVolume = 0
+                
+            Else
+                ' Define open price and accumulate total stock volume
+                If ws.Cells(i - 1, 1).Value <> ws.Cells(i, 1).Value Then
+                    openPrice = ws.Cells(i, 3).Value
+                End If
+                totalStockVolume = totalStockVolume + ws.Cells(i, 7).Value
+            End If
+            
+        Next i
+        
+    Next ws
+
+End Sub
+
+Sub Functionality()
+    
+    ' Determine greatest percent increase, decrease, and total volume
+    
+    Dim ws As Worksheet
+    For Each ws In ThisWorkbook.Worksheets
+        
+        Dim greatestPercentIncrease As Double
+        Dim greatestPercentDecrease As Double
+        Dim greatestTotalVolume As Double
+        Dim increaseMatch As Variant
+        Dim decreaseMatch As Variant
+        Dim volumeMatch As Variant
+        
+        ' Greatest percent increase
+        greatestPercentIncrease = Application.WorksheetFunction.Max(ws.Range("K:K"))
+        ws.Range("Q2").Value = greatestPercentIncrease
+        ws.Range("Q2").NumberFormat = "0.00%"
+        
+        increaseMatch = Application.Match(ws.Range("Q2").Value, ws.Range("K:K"), 0)
+        If Not IsError(increaseMatch) Then
+            ws.Range("P2").Value = ws.Range("I" & increaseMatch).Value
+        End If
+        
+        ' Greatest percent decrease
+        greatestPercentDecrease = Application.WorksheetFunction.Min(ws.Range("K:K"))
+        ws.Range("Q3").Value = greatestPercentDecrease
+        ws.Range("Q3").NumberFormat = "0.00%"
+        
+        decreaseMatch = Application.Match(ws.Range("Q3").Value, ws.Range("K:K"), 0)
+        If Not IsError(decreaseMatch) Then
+            ws.Range("P3").Value = ws.Range("I" & decreaseMatch).Value
+        End If
+        
+        ' Greatest total volume
+        greatestTotalVolume = Application.WorksheetFunction.Max(ws.Range("L:L"))
+        ws.Range("Q4").Value = greatestTotalVolume
+        
+        volumeMatch = Application.Match(ws.Range("Q4").Value, ws.Range("L:L"), 0)
+        If Not IsError(volumeMatch) Then
+            ws.Range("P4").Value = ws.Range("I" & volumeMatch).Value
+        End If
+        
+    Next ws
+
+End Sub
+
+Sub ConditionalFormatting()
+
+    Dim ws As Worksheet
+    Dim LastRow As Long
+    Dim i As Long
+    Dim yearlyChange As Double
+    
+    For Each ws In ThisWorkbook.Worksheets
+        LastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+        
+        For i = 2 To LastRow
+            yearlyChange = ws.Cells(i, 10).Value ' Column J
+            
+            ' Apply conditional formatting
+            If yearlyChange > 0 Then
+                ws.Cells(i, 10).Interior.ColorIndex = 4 ' Green
+            Else
+                ws.Cells(i, 10).Interior.ColorIndex = 3 ' Red
+            End If
+        Next i
+    Next ws
+
+End Sub
